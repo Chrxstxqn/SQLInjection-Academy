@@ -1,0 +1,64 @@
+name: PHP Syntax Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  php-syntax:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mysqli, pdo_mysql
+    
+    - name: Validate PHP syntax
+      run: |
+        find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; | grep -v "No syntax errors"
+        if [ $? -eq 0 ]; then
+          echo "Syntax errors found!"
+          exit 1
+        else
+          echo "All PHP files have valid syntax"
+        fi
+    
+    - name: Check vulnerable files exist
+      run: |
+        test -f vulnerable/login.php
+        test -f vulnerable/dashboard.php
+        test -f secure/login.php
+        test -f secure/dashboard.php
+        test -f config/database.php
+    
+    - name: Check course files exist
+      run: |
+        test -f course/01-introduction.md
+        test -f course/02-sql-basics.md
+        test -f course/03-vulnerability-identification.md
+        test -f course/04-basic-techniques.md
+        test -f course/05-defense-mechanisms.md
+        test -f course/06-tools.md
+    
+    - name: Validate HTML
+      run: |
+        test -f index.html
+        grep -q "SQLInjection Academy" index.html
+    
+    - name: Check documentation
+      run: |
+        test -f README.md
+        test -f LICENSE
+        test -f CONTRIBUTING.md
+        test -f SECURITY.md
+        test -f .gitignore
